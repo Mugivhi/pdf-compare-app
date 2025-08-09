@@ -38,13 +38,15 @@ def highlight_differences(a_lines, b_lines):
     for line in diff:
         code = line[:2]
         content = line[2:]
+
         if code == '  ':
-            a_diff.append(content)
-            b_diff.append(content)
+            a_diff.append(f'<div style="background-color: #f0f0f0; padding: 4px;">{content}</div>')
+            b_diff.append(f'<div style="background-color: #f0f0f0; padding: 4px;">{content}</div>')
+
         elif code == '- ':
-            a_diff.append(f"🟥 [-] {content}")
+            a_diff.append(f'<div style="background-color: #ffe6e6; color: #a00; padding: 4px;">[-] {content}</div>')
         elif code == '+ ':
-            b_diff.append(f"🟩 [+] {content}")
+            b_diff.append(f'<div style="background-color: #e6ffe6; color: #0a0; padding: 4px;">[+] {content}</div>')
 
     return a_diff, b_diff
 
@@ -64,32 +66,26 @@ with col2:
 
 # When both files are uploaded
 if file1 and file2:
-    with st.spinner("Processing and comparing..."):
-        lines1 = extract_lines(file1)
-        lines2 = extract_lines(file2)
+    # Extract text from both files
+    lines1 = extract_lines(file1)
+    lines2 = extract_lines(file2)
 
-        text1 = "\n".join(lines1)
-        text2 = "\n".join(lines2)
+    # Highlight line-by-line differences
+    a_diff, b_diff = highlight_differences(lines1, lines2)
 
-        # Semantic similarity
-        emb1 = model.encode(text1, convert_to_tensor=True)
-        emb2 = model.encode(text2, convert_to_tensor=True)
-        similarity = util.cos_sim(emb1, emb2).item()
+    # Show side-by-side results with styled HTML
+    left, right = st.columns(2)
 
-        st.success(f"Semantic Similarity Score: **{similarity:.2f}**")
+    with left:
+        st.markdown("### 📄 Document 1")
+        for line in a_diff:
+            st.markdown(line, unsafe_allow_html=True)
 
-        # Differences
-        a_diff, b_diff = highlight_differences(lines1, lines2)
+    with right:
+        st.markdown("### 📄 Document 2")
+        for line in b_diff:
+            st.markdown(line, unsafe_allow_html=True)
 
-        # Display side-by-side
-        left, right = st.columns(2)
-
-        with left:
-            st.markdown("### 📄 Document 1")
-            st.code("\n".join(a_diff), language="text")
-
-        with right:
-            st.markdown("### 📄 Document 2")
-            st.code("\n".join(b_diff), language="text")
 else:
     st.info("Upload both files to compare them.")
+
